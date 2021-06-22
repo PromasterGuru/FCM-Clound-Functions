@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const { event } = require("firebase-functions/lib/providers/analytics");
+admin.initializeApp();
+
 // TODO(DEVELOPER): Import the Cloud Functions for Firebase and the Firebase Admin modules here.
 
 // TODO(DEVELOPER): Write the addWelcomeMessages Function here.
@@ -21,3 +26,35 @@
 // TODO(DEVELOPER): Write the blurOffensiveImages Function here.
 
 // TODO(DEVELOPER): Write the sendNotifications Function here.
+// exports.sendNotifications = functions.firestore.document('/messages/{messageId}').onWrite((event) => {
+//     const data= event.data;
+//     console.log("Message received");
+//     console.log(data);
+//     const payload = {
+//         notification: {
+//             title: "Reminder",
+//             body: "Tuma updates kijanaa"
+//         }
+//     };
+//     return admin.messaging().sendToTopic("ed_message_topic", payload);
+exports.sendNotifications = functions.firestore
+  .document('/messages/{messageId}')
+  .onCreate(async (snapshot) => {
+      console.log("Message received");
+      console.log(snapshot.data());
+    const payload = {
+      notification: {
+        title: snapshot.data().title,
+        body: snapshot.data().message,
+      },
+    };
+    await admin
+      .messaging()
+      .sendToTopic("ed_message_topic", payload)
+      .then(function (response) {
+        console.log("Notification sent successfully:", response);
+      })
+      .catch(function (error) {
+        console.log("Notification sent failed:", error);
+      });
+  });
